@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#172554">
+<title>وحدة التحكم</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;color:#172033;background:#f3f5f9}
+*{box-sizing:border-box}body{margin:0}header{background:#172554;color:#fff;padding:20px 16px}
+header h1{margin:0;font-size:1.45rem}header p{margin:6px 0 0;color:#dbeafe;font-size:.92rem}
+main{max-width:900px;margin:auto;padding:16px}.card{background:#fff;border:1px solid #e0e5ee;border-radius:16px;padding:16px;margin:0 0 14px;box-shadow:0 3px 14px #15213a0a}
+h2{font-size:1.08rem;margin:0 0 12px}.hint{color:#64748b;font-size:.88rem;line-height:1.6}
+label{display:block;font-size:.9rem;font-weight:650;margin:10px 0 5px}
+input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:11px;background:#fff;color:#172033}
+textarea{min-height:82px;resize:vertical}button{border:0;border-radius:10px;padding:11px 14px;cursor:pointer;font-weight:700}
+.primary{background:#1d4ed8;color:white}.secondary{background:#e8edf5;color:#172033}.danger{background:#fee2e2;color:#991b1b}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#app{display:none}.record{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-top:10px}
+.recordtop{display:flex;justify-content:space-between;gap:10px;align-items:start}.record h3{margin:0;font-size:1rem;overflow-wrap:anywhere}.pill{font-size:.78rem;background:#eef2ff;color:#3730a3;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.meta{font-size:.83rem;color:#64748b;margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere}.amount{font-weight:750;color:#0f766e}
+#message{padding:10px;border-radius:10px;margin:10px 0;display:none;white-space:pre-wrap}.ok{display:block!important;background:#dcfce7;color:#166534}.err{display:block!important;background:#fee2e2;color:#991b1b}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.small{font-size:.8rem}
+@media(max-width:520px){.grid{grid-template-columns:1fr}main{padding:10px}.card{padding:13px}}
+</style>
+</head>
+<body>
+<header><h1>وحدة التحكم</h1><p>النسخة الأولى · سجلات سحابية قابلة للمزامنة</p></header>
+<main>
+<div id="message"></div>
+<section class="card" id="setup">
+<h2>إعداد الاتصال</h2>
+<p class="hint">أدخل رابط مشروع Supabase ومفتاح Publishable فقط. لا تضع هنا مفتاح Secret أو service_role.</p>
+<label for="projectUrl">رابط المشروع</label><input id="projectUrl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="url">
+<label for="publicKey">Publishable key</label><input id="publicKey" placeholder="sb_publishable_..." autocomplete="off">
+<div class="actions"><button class="primary" id="saveConfig">حفظ الإعدادات على هذا الجهاز</button></div>
+<p class="hint small">هذه القيم ليست كلمة مرور، لكن صلاحيات البيانات يحميها تسجيل الدخول وسياسات قاعدة البيانات.</p>
+</section>
+
+<section class="card" id="auth">
+<h2>تسجيل الدخول</h2>
+<p class="hint">أنشئ حسابًا خاصًا بك أو سجّل الدخول. استخدم بريدًا إلكترونيًا تتحكم به وكلمة مرور قوية.</p>
+<label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com">
+<label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" placeholder="8 أحرف على الأقل">
+<div class="actions"><button class="primary" id="signIn">دخول</button><button class="secondary" id="signUp">إنشاء حساب</button></div>
+<p class="hint small">إذا كان تأكيد البريد مفعّلًا في Supabase، افتح رسالة التأكيد أولًا ثم سجّل الدخول.</p>
+</section>
+
+<div id="app">
+<section class="card">
+<div class="toprow"><h2>إضافة سجل</h2><button class="secondary small" id="signOut">تسجيل الخروج</button></div>
+<p class="hint">سجّل المعلومة في مكانها. النسخة الأولى لا تغيّر الأرقام أو السجلات الأخرى تلقائيًا.</p>
+<div class="grid">
+<div><label for="section">الوحدة / القسم</label><select id="section">
+<option value="projects">المشاريع</option><option value="debts">الديون</option><option value="receivables">المستحقات</option><option value="liquidity">السيولة</option><option value="technical">السجلات الفنية</option><option value="decisions">القرارات</option><option value="events">سجل التغييرات / الأحداث</option><option value="other">أخرى</option>
+</select></div>
+<div><label for="status">الحالة</label><select id="status">
+<option>نشط</option><option>قيد الانتظار</option><option>مؤجل</option><option>ملغى مؤقتًا</option><option>منتهٍ</option><option>مغلق</option><option>يحتاج تأكيدًا</option>
+</select></div>
+</div>
+<label for="title">العنوان / اسم الشخص أو المشروع</label><input id="title" placeholder="مثال: عبد الحق — انتظار السلع">
+<label for="amount">المبلغ بالدينار (اختياري)</label><input id="amount" type="number" min="0" step="0.01" placeholder="مثال: 12500">
+<label for="details">التفاصيل والمصدر</label><textarea id="details" placeholder="اكتب المعلومة كما هي، وأي توضيح مهم..."></textarea>
+<div class="actions"><button class="primary" id="addRecord">حفظ السجل</button><button class="secondary" id="clearForm">مسح الحقول</button></div>
+</section>
+
+<section class="card">
+<div class="toprow"><h2>السجلات المحفوظة</h2><button class="secondary" id="refresh">تحديث</button></div>
+<div class="grid">
+<div><label for="filterSection">تصفية حسب القسم</label><select id="filterSection"><option value="">كل الأقسام</option><option value="projects">المشاريع</option><option value="debts">الديون</option><option value="receivables">المستحقات</option><option value="liquidity">السيولة</option><option value="technical">السجلات الفنية</option><option value="decisions">القرارات</option><option value="events">سجل التغييرات / الأحداث</option><option value="other">أخرى</option></select></div>
+<div><label for="search">بحث</label><input id="search" placeholder="ابحث في العناوين والتفاصيل"></div>
+</div>
+<div id="records"></div>
+</section>
+</div>
+<p class="hint small">النسخة 1.0 · لا تُدخل معلومات شديدة الحساسية قبل اختبار إعدادات الأمان والنسخ الاحتياطي.</p>
+</main>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const $ = (id) => document.getElementById(id);
+let supabase = null;
+let currentUser = null;
+let allRecords = [];
+const sectionNames = {projects:'المشاريع',debts:'الديون',receivables:'المستحقات',liquidity:'السيولة',technical:'السجلات الفنية',decisions:'القرارات',events:'سجل التغييرات / الأحداث',other:'أخرى'};
+const configKey = 'uct_supabase_config_v1';
+
+function message(text, type='ok') {
+  const box = $('message'); box.textContent = text; box.className = type; box.style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function clearMessage(){ $('message').className=''; $('message').style.display='none'; }
+function getConfig(){
+  try { return JSON.parse(localStorage.getItem(configKey) || 'null'); } catch { return null; }
+}
+function initClient(){
+  const cfg = getConfig();
+  if (!cfg?.url || !cfg?.key) { supabase=null; return false; }
+  try { supabase = createClient(cfg.url, cfg.key); return true; } catch { return false; }
+}
+function showAuth(isLoggedIn){
+  $('auth').style.display = isLoggedIn ? 'none' : 'block';
+  $('app').style.display = isLoggedIn ? 'block' : 'none';
+}
+function sectionLabel(v){ return sectionNames[v] || v || '—'; }
+function escapeHtml(v=''){
+  return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderRecords(){
+  const section = $('filterSection').value;
+  const q = $('search').value.trim().toLowerCase();
+  const filtered = allRecords.filter(r => (!section || r.section===section) &&
+    (!q || `${r.title||''} ${r.details||''} ${r.status||''}`.toLowerCase().includes(q)));
+  $('records').innerHTML = '';
+  if (!filtered.length) { $('records').innerHTML = '<p class="hint">لا توجد سجلات مطابقة.</p>'; return; }
+  for (const r of filtered) {
+    const el = document.createElement('article'); el.className='record';
+    const amount = r.amount === null || r.amount === undefined ? '' : `<div class="meta amount">${Number(r.amount).toLocaleString('fr-DZ')} دج</div>`;
+    el.innerHTML = `<div class="recordtop"><div><h3>${escapeHtml(r.title)}</h3><div class="meta">${escapeHtml(sectionLabel(r.section))}</div></div><span class="pill">${escapeHtml(r.status)}</span></div>${amount}<div class="meta">${escapeHtml(r.details||'')}</div><div class="meta small">آخر تحديث: ${new Date(r.updated_at).toLocaleString('ar-DZ')}</div><div class="actions"><button class="secondary small" data-edit="${r.id}">تعديل</button><button class="danger small" data-delete="${r.id}">حذف</button></div>`;
+    $('records').appendChild(el);
+  }
+  $('records').querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => editRecord(b.dataset.edit)));
+  $('records').querySelectorAll('[data-delete]').forEach(b => b.addEventListener('click', () => deleteRecord(b.dataset.delete)));
+}
+async function loadRecords(){
+  if (!supabase || !currentUser) return;
+  clearMessage();
+  const {data,error} = await supabase.from('control_records').select('*').order('updated_at',{ascending:false});
+  if (error) { message('تعذر تحميل السجلات: '+error.message,'err'); return; }
+  allRecords = data || []; renderRecords();
+}
+async function authAction(kind){
+  clearMessage();
+  if (!initClient()) { message('أدخل رابط Supabase ومفتاح Publishable أولًا.','err'); return; }
+  const email = $('email').value.trim(), password = $('password').value;
+  if (!email || password.length < 8) { message('أدخل بريدًا صحيحًا وكلمة مرور من 8 أحرف على الأقل.','err'); return; }
+  const result = kind==='signup'
+    ? await supabase.auth.signUp({email,password})
+    : await supabase.auth.signInWithPassword({email,password});
+  if (result.error) { message(result.error.message,'err'); return; }
+  if (kind==='signup' && !result.data.session) {
+    message('تم إرسال طلب إنشاء الحساب. افتح بريدك لتأكيد الحساب إذا كان تأكيد البريد مفعّلًا، ثم سجّل الدخول.'); return;
+  }
+  currentUser = result.data.user || result.data.session?.user || null;
+  showAuth(!!currentUser);
+  if (currentUser) { message('تم تسجيل الدخول.'); await loadRecords(); }
+}
+async function addRecord(){
+  clearMessage();
+  const title = $('title').value.trim();
+  const rawAmount = $('amount').value.trim();
+  if (!title) { message('اكتب عنوان السجل أولًا.','err'); return; }
+  const row = {user_id:currentUser.id,section:$('section').value,status:$('status').value,title,
+    amount:rawAmount===''?null:Number(rawAmount),details:$('details').value.trim()};
+  if (row.amount!==null && (!Number.isFinite(row.amount)||row.amount<0)) { message('تحقق من المبلغ.','err'); return; }
+  const {error} = await supabase.from('control_records').insert(row);
+  if (error) { message('لم يُحفظ السجل: '+error.message,'err'); return; }
+  $('title').value=''; $('amount').value=''; $('details').value='';
+  message('تم حفظ السجل في قاعدة البيانات السحابية.'); await loadRecords();
+}
+async function editRecord(id){
+  const r = allRecords.find(x=>x.id===id); if(!r) return;
+  const title = prompt('العنوان:',r.title); if(title===null) return;
+  const status = prompt('الحالة:',r.status); if(status===null) return;
+  const details = prompt('التفاصيل:',r.details||''); if(details===null) return;
+  const amountText = prompt('المبلغ بالدينار (اتركه فارغًا إن لم يوجد):',r.amount??''); if(amountText===null) return;
+  const amount = amountText.trim()===''?null:Number(amountText);
+  if (!title.trim() || (amount!==null && (!Number.isFinite(amount)||amount<0))) { message('البيانات غير صحيحة؛ لم يتم التعديل.','err'); return; }
+  const {error} = await supabase.from('control_records').update({title:title.trim(),status:status.trim(),details:details.trim(),amount}).eq('id',id);
+  if(error){message('تعذر التعديل: '+error.message,'err');return;}
+  message('تم تحديث السجل.'); await loadRecords();
+}
+async function deleteRecord(id){
+  const r=allRecords.find(x=>x.id===id); if(!r) return;
+  if(!confirm(`حذف السجل «${r.title}» نهائيًا؟ لا يمكن التراجع عن ذلك من داخل التطبيق.`)) return;
+  const {error}=await supabase.from('control_records').delete().eq('id',id);
+  if(error){message('تعذر الحذف: '+error.message,'err');return;}
+  message('تم حذف السجل.'); await loadRecords();
+}
+$('saveConfig').addEventListener('click',()=>{
+  const url=$('projectUrl').value.trim().replace(/\/+$/,'');
+  const key=$('publicKey').value.trim();
+  if(!/^https:\/\/[a-zA-Z0-9-]+\.supabase\.co$/.test(url)||!key){message('تحقق من رابط المشروع ومفتاح Publishable.','err');return;}
+  localStorage.setItem(configKey,JSON.stringify({url,key}));
+  message('حُفظ الإعداد على هذا الجهاز. أعد تحميل الصفحة إن لزم.'); initClient();
+});
+$('signIn').addEventListener('click',()=>authAction('signin'));
+$('signUp').addEventListener('click',()=>authAction('signup'));
+$('addRecord').addEventListener('click',addRecord);
+$('clearForm').addEventListener('click',()=>{ $('title').value='';$('amount').value='';$('details').value=''; });
+$('refresh').addEventListener('click',loadRecords);
+$('filterSection').addEventListener('change',renderRecords);
+$('search').addEventListener('input',renderRecords);
+$('signOut').addEventListener('click',async()=>{await supabase.auth.signOut();currentUser=null;allRecords=[];showAuth(false);message('تم تسجيل الخروج.');});
+const cfg=getConfig(); if(cfg){$('projectUrl').value=cfg.url;$('publicKey').value=cfg.key;}
+if(initClient()){
+  const {data}=await supabase.auth.getSession();
+  currentUser=data.session?.user||null; showAuth(!!currentUser);
+  if(currentUser) await loadRecords(); else showAuth(false);
+}else{showAuth(false);}
+</script>
+</body>
+</html>
